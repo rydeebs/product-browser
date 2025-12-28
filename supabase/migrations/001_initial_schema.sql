@@ -63,3 +63,20 @@ CREATE TRIGGER update_opportunities_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+-- Post analysis table (AI analysis results)
+CREATE TABLE IF NOT EXISTS post_analysis (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  raw_post_id UUID REFERENCES raw_posts(id) ON DELETE CASCADE,
+  problem_summary TEXT,
+  pain_severity INTEGER DEFAULT 0 CHECK (pain_severity >= 0 AND pain_severity <= 10),
+  willingness_to_pay BOOLEAN DEFAULT FALSE,
+  product_category TEXT,
+  keywords TEXT[],
+  analyzed_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_post_analysis_raw_post ON post_analysis(raw_post_id);
+CREATE INDEX idx_post_analysis_pain_severity ON post_analysis(pain_severity DESC);
+CREATE INDEX idx_post_analysis_category ON post_analysis(product_category);
+
