@@ -24,10 +24,17 @@ CREATE TABLE IF NOT EXISTS opportunities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
+  problem_summary TEXT,
   keywords TEXT[],
+  category TEXT,
   confidence_score INTEGER DEFAULT 0 CHECK (confidence_score >= 0 AND confidence_score <= 100),
   trend_score INTEGER DEFAULT 0,
+  pain_severity INTEGER DEFAULT 0 CHECK (pain_severity >= 0 AND pain_severity <= 10),
+  growth_pattern TEXT DEFAULT 'regular',
+  timing_score INTEGER DEFAULT 0 CHECK (timing_score >= 0 AND timing_score <= 10),
   evidence_count INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active',
+  detected_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -41,7 +48,10 @@ CREATE TABLE IF NOT EXISTS evidence (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   opportunity_id UUID REFERENCES opportunities(id) ON DELETE CASCADE,
   post_id UUID REFERENCES raw_posts(id) ON DELETE CASCADE,
+  raw_post_id UUID REFERENCES raw_posts(id) ON DELETE CASCADE,
   content TEXT,
+  signal_type TEXT,
+  weight NUMERIC DEFAULT 1.0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
