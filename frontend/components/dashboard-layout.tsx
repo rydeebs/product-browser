@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import Link from "next/link"
 import {
   Search,
@@ -18,6 +18,10 @@ import {
   Target,
   Menu,
   X,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  Settings,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -215,15 +219,42 @@ function DashboardLayout() {
     }
   }
 
+  // Touch swipe handling for mobile carousel
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    if (isLeftSwipe) {
+      scrollCarousel("right")
+    } else if (isRightSwipe) {
+      scrollCarousel("left")
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-foreground relative">
+      {/* Background video - hidden on mobile for performance */}
       <video
         ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
-        className="fixed inset-0 w-full h-full object-contain z-0 pt-8"
+        className="fixed inset-0 w-full h-full object-contain z-0 pt-8 hidden md:block"
         style={{
           left: "50%",
           transform: "translateX(-50%)",
@@ -232,25 +263,26 @@ function DashboardLayout() {
         <source src="/ascii-globe-video.mp4" type="video/mp4" />
       </video>
 
-      <header className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card/90 backdrop-blur-md border-b border-border/50">
-        <div className="flex items-center justify-between p-4">
+      {/* Mobile Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-b border-border/50 safe-area-inset-top">
+        <div className="flex items-center justify-between px-4 py-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            className="text-foreground"
+            className="text-foreground -ml-2 h-10 w-10 active:scale-95 transition-transform"
           >
             {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
 
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Layers className="w-4 h-4 text-primary-foreground" />
             </div>
             <h1 className="text-base font-display font-semibold text-foreground">OpportunityOS</h1>
           </div>
 
-          <Button variant="ghost" size="icon" className="text-foreground">
+          <Button variant="ghost" size="icon" className="text-foreground -mr-2 h-10 w-10 active:scale-95 transition-transform">
             <Search className="w-5 h-5" />
           </Button>
         </div>
@@ -346,8 +378,8 @@ function DashboardLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative z-10 pt-16 lg:pt-0">
-        {/* Header - hidden on mobile */}
+      <main className="flex-1 flex flex-col overflow-hidden relative z-10 pt-14 pb-16 lg:pt-0 lg:pb-0">
+        {/* Desktop Header */}
         <header className="border-b border-border/50 bg-card/30 backdrop-blur-sm hidden lg:block">
           <div className="p-6">
             <div className="flex items-center gap-4 w-full">
@@ -387,16 +419,20 @@ function DashboardLayout() {
           </div>
         </header>
 
-        <div className="lg:hidden p-4 bg-card/30 backdrop-blur-sm border-b border-border/50">
-          <Input
-            placeholder="Search opportunities..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-background/50 border-border/50"
-          />
-          <div className="flex gap-2 mt-2">
+        {/* Mobile Search & Filters */}
+        <div className="lg:hidden px-4 py-3 bg-card/50 backdrop-blur-sm border-b border-border/50 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search opportunities..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-background/50 border-border/50 h-11 text-base"
+            />
+          </div>
+          <div className="flex gap-2">
             <Select value={painFilter} onValueChange={setPainFilter}>
-              <SelectTrigger className="flex-1 bg-background/50 border-border/50 text-xs">
+              <SelectTrigger className="flex-1 bg-background/50 border-border/50 h-10 text-sm">
                 <SelectValue placeholder="Pain Level" />
               </SelectTrigger>
               <SelectContent>
@@ -407,7 +443,7 @@ function DashboardLayout() {
               </SelectContent>
             </Select>
             <Select defaultValue="confidence" onValueChange={(value) => setConfidenceFilter(value)}>
-              <SelectTrigger className="flex-1 bg-background/50 border-border/50 text-xs">
+              <SelectTrigger className="flex-1 bg-background/50 border-border/50 h-10 text-sm">
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent>
@@ -419,99 +455,102 @@ function DashboardLayout() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 lg:p-6 space-y-6 lg:space-y-8 max-w-7xl mx-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="px-4 py-5 lg:p-6 space-y-5 lg:space-y-8 max-w-7xl mx-auto">
             {/* Featured Product of the Day Section */}
             <div className="space-y-4 lg:space-y-6">
-              <h1 className="text-2xl lg:text-4xl font-display font-bold text-center text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent px-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-center text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent">
                 Product of the Day
               </h1>
 
               {/* Featured Card - optimized for mobile */}
-              <Link href={`/opportunity/${featuredOpportunity.id}`} className="block">
-                <Card className="group bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 cursor-pointer overflow-hidden">
-                  <div className="p-4 lg:p-8 space-y-4 lg:space-y-6">
-                    <div className="flex flex-wrap gap-2">
+              <Link href={`/opportunity/${featuredOpportunity.id}`} className="block group">
+                <Card className="bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 cursor-pointer overflow-hidden active:scale-[0.99] lg:active:scale-100">
+                  <div className="p-4 sm:p-5 lg:p-8 space-y-4 lg:space-y-6">
+                    {/* Badges - horizontal scroll on mobile */}
+                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
                       <Badge
                         variant="outline"
-                        className={badgeColors[featuredOpportunity.category.toLowerCase().split(" ")[0]]}
+                        className={`${badgeColors[featuredOpportunity.category.toLowerCase().split(" ")[0]]} whitespace-nowrap flex-shrink-0`}
                       >
                         {featuredOpportunity.category}
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={badgeColors[featuredOpportunity.timing.toLowerCase().replace(" ", "-")]}
+                        className={`${badgeColors[featuredOpportunity.timing.toLowerCase().replace(" ", "-")]} whitespace-nowrap flex-shrink-0`}
                       >
                         {featuredOpportunity.timing}
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={badgeColors[featuredOpportunity.painLevel.toLowerCase() + "-pain"]}
+                        className={`${badgeColors[featuredOpportunity.painLevel.toLowerCase() + "-pain"]} whitespace-nowrap flex-shrink-0`}
                       >
                         {featuredOpportunity.painLevel} Pain
                       </Badge>
-                      <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                      <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30 whitespace-nowrap flex-shrink-0">
                         Featured
                       </Badge>
                     </div>
 
-                    <h2 className="text-2xl lg:text-4xl font-display font-bold text-balance leading-tight text-foreground group-hover:text-primary transition-colors">
+                    <h2 className="text-xl sm:text-2xl lg:text-4xl font-display font-bold text-balance leading-tight text-foreground group-hover:text-primary transition-colors">
                       {featuredOpportunity.title}
                     </h2>
 
-                    <p className="text-sm lg:text-base text-muted-foreground leading-relaxed text-pretty max-w-3xl">
+                    <p className="text-sm lg:text-base text-muted-foreground leading-relaxed text-pretty max-w-3xl line-clamp-3 sm:line-clamp-none">
                       {featuredOpportunity.summary}
                     </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pt-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground flex items-center gap-2">
-                            <Target className="w-4 h-4" />
-                            Confidence Score
-                          </span>
+                    {/* Metrics - stacked on mobile, grid on larger screens */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 pt-2 sm:pt-4">
+                      <div className="flex items-center justify-between sm:block sm:space-y-3 py-2 sm:py-0 border-b sm:border-b-0 border-border/30 last:border-b-0">
+                        <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                          <Target className="w-4 h-4" />
+                          Confidence
+                        </span>
+                        <div className="flex items-center gap-3 sm:block">
                           <span className="font-bold text-lg text-foreground">{featuredOpportunity.confidence}%</span>
+                          <Progress value={featuredOpportunity.confidence} className="h-2 w-20 sm:w-full sm:mt-2" />
                         </div>
-                        <Progress value={featuredOpportunity.confidence} className="h-2" />
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4" />
-                            Pain Severity
-                          </span>
+                      <div className="flex items-center justify-between sm:block sm:space-y-3 py-2 sm:py-0 border-b sm:border-b-0 border-border/30 last:border-b-0">
+                        <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                          <TrendingUp className="w-4 h-4" />
+                          Pain Severity
+                        </span>
+                        <div className="flex items-center gap-3 sm:block">
                           <span className="font-bold text-lg text-foreground">
                             {featuredOpportunity.painSeverity}/10
                           </span>
+                          <Progress value={featuredOpportunity.painSeverity * 10} className="h-2 w-20 sm:w-full sm:mt-2" />
                         </div>
-                        <Progress value={featuredOpportunity.painSeverity * 10} className="h-2" />
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Market Interest
-                          </span>
+                      <div className="flex items-center justify-between sm:block sm:space-y-3 py-2 sm:py-0">
+                        <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                          <Users className="w-4 h-4" />
+                          Market Interest
+                        </span>
+                        <div className="flex items-center gap-3 sm:block">
                           <span className="font-bold text-lg text-foreground">High</span>
+                          <Progress value={85} className="h-2 w-20 sm:w-full sm:mt-2" />
                         </div>
-                        <Progress value={85} className="h-2" />
                       </div>
                     </div>
                   </div>
                 </Card>
               </Link>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                <Card className="bg-card border-border/50 p-6">
-                  <div className="space-y-4">
+              {/* Stats Cards - horizontal scroll on mobile, grid on larger screens */}
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-3 lg:gap-4 scrollbar-hide snap-x snap-mandatory">
+                <Card className="bg-card border-border/50 p-4 lg:p-6 flex-shrink-0 w-[280px] sm:w-[300px] lg:w-auto snap-start">
+                  <div className="space-y-3 lg:space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">Market Trend</h3>
-                    <div className="flex items-end gap-1 h-24">
+                    <div className="flex items-end gap-1 h-20 lg:h-24">
                       {[45, 52, 48, 61, 55, 68, 72, 78, 85, 87].map((height, i) => (
                         <div
                           key={i}
-                          className="flex-1 bg-gradient-to-t from-white via-blue-300 to-[#444df6] rounded-t transition-all hover:opacity-80"
+                          className="flex-1 bg-gradient-to-t from-white via-blue-300 to-[#444df6] rounded-t transition-all active:opacity-80 lg:hover:opacity-80"
                           style={{ height: `${height}%` }}
                         />
                       ))}
@@ -520,30 +559,30 @@ function DashboardLayout() {
                   </div>
                 </Card>
 
-                <Card className="bg-card border-border/50 p-6">
-                  <div className="space-y-4">
+                <Card className="bg-card border-border/50 p-4 lg:p-6 flex-shrink-0 w-[280px] sm:w-[300px] lg:w-auto snap-start">
+                  <div className="space-y-3 lg:space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">Competition Level</h3>
-                    <div className="flex items-center justify-center h-24">
-                      <div className="relative w-32 h-32">
+                    <div className="flex items-center justify-center h-20 lg:h-24">
+                      <div className="relative w-24 h-24 lg:w-32 lg:h-32">
                         <svg className="w-full h-full transform -rotate-90">
                           <circle
-                            cx="64"
-                            cy="64"
-                            r="56"
+                            cx="50%"
+                            cy="50%"
+                            r="40%"
                             stroke="currentColor"
                             strokeWidth="8"
                             fill="none"
                             className="text-muted/20"
                           />
                           <circle
-                            cx="64"
-                            cy="64"
-                            r="56"
+                            cx="50%"
+                            cy="50%"
+                            r="40%"
                             stroke="url(#gradient)"
                             strokeWidth="8"
                             fill="none"
-                            strokeDasharray={`${2 * Math.PI * 56}`}
-                            strokeDashoffset={`${2 * Math.PI * 56 * (1 - 0.35)}`}
+                            strokeDasharray="251.2"
+                            strokeDashoffset="163.28"
                             className="transition-all duration-1000"
                           />
                           <defs>
@@ -554,7 +593,7 @@ function DashboardLayout() {
                           </defs>
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-2xl font-bold">Low</span>
+                          <span className="text-xl lg:text-2xl font-bold">Low</span>
                         </div>
                       </div>
                     </div>
@@ -562,30 +601,30 @@ function DashboardLayout() {
                   </div>
                 </Card>
 
-                <Card className="bg-card border-border/50 p-6">
-                  <div className="space-y-4">
+                <Card className="bg-card border-border/50 p-4 lg:p-6 flex-shrink-0 w-[280px] sm:w-[300px] lg:w-auto snap-start">
+                  <div className="space-y-3 lg:space-y-4">
                     <h3 className="text-sm font-medium text-muted-foreground">Revenue Potential</h3>
-                    <div className="space-y-3 pt-2">
-                      <div className="space-y-2">
+                    <div className="space-y-2.5 lg:space-y-3 pt-1 lg:pt-2">
+                      <div className="space-y-1.5 lg:space-y-2">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">Year 1</span>
                           <span className="font-semibold">$2.5M</span>
                         </div>
-                        <Progress value={50} className="h-2" />
+                        <Progress value={50} className="h-1.5 lg:h-2" />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5 lg:space-y-2">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">Year 2</span>
                           <span className="font-semibold">$8.2M</span>
                         </div>
-                        <Progress value={75} className="h-2" />
+                        <Progress value={75} className="h-1.5 lg:h-2" />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5 lg:space-y-2">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">Year 3</span>
                           <span className="font-semibold">$15M</span>
                         </div>
-                        <Progress value={100} className="h-2" />
+                        <Progress value={100} className="h-1.5 lg:h-2" />
                       </div>
                     </div>
                   </div>
@@ -593,45 +632,68 @@ function DashboardLayout() {
               </div>
             </div>
 
+            {/* More Opportunities Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl lg:text-2xl font-display font-bold">More Opportunities</h2>
-                <span className="text-xs lg:text-sm text-muted-foreground">
-                  {filteredOpportunities.length} opportunities found
-                </span>
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-display font-bold">More Opportunities</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs lg:text-sm text-muted-foreground">
+                    {filteredOpportunities.length} found
+                  </span>
+                  {/* Desktop carousel controls */}
+                  <div className="hidden lg:flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => scrollCarousel("left")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => scrollCarousel("right")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              <div className="lg:hidden space-y-4">
+              {/* Mobile: Vertical card list */}
+              <div className="lg:hidden space-y-3">
                 {otherOpportunities.slice(0, 10).map((opp) => (
-                  <Link key={opp.id} href={`/opportunity/${opp.id}`} className="block">
-                    <Card className="group bg-card border-border/50 hover:border-primary/50 transition-all duration-300 cursor-pointer">
-                      <div className="p-4 space-y-3">
-                        <div className="flex flex-wrap gap-1.5">
-                          {opp.badges.map((badge, idx) => (
-                            <Badge key={idx} variant="outline" className={`${badgeColors[badge]} text-xs px-2 py-0.5`}>
+                  <Link key={opp.id} href={`/opportunity/${opp.id}`} className="block group">
+                    <Card className="bg-card border-border/50 active:border-primary/50 transition-all duration-200 cursor-pointer active:scale-[0.99]">
+                      <div className="p-4 space-y-2.5">
+                        {/* Badges - horizontal scroll */}
+                        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                          {opp.badges.slice(0, 3).map((badge, idx) => (
+                            <Badge key={idx} variant="outline" className={`${badgeColors[badge]} text-[10px] px-2 py-0.5 whitespace-nowrap flex-shrink-0`}>
                               {badge}
                             </Badge>
                           ))}
                         </div>
-                        <h3 className="text-lg font-display font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                        <h3 className="text-base font-display font-semibold text-foreground group-active:text-primary transition-colors line-clamp-2">
                           {opp.title}
                         </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{opp.summary}</p>
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">Confidence</span>
-                              <span className="font-semibold">{opp.confidence}%</span>
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{opp.summary}</p>
+                        
+                        {/* Compact metrics row */}
+                        <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5">
+                              <Target className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="text-xs font-semibold">{opp.confidence}%</span>
                             </div>
-                            <Progress value={opp.confidence} className="h-1.5" />
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">Pain</span>
-                              <span className="font-semibold">{opp.painSeverity}/10</span>
+                            <div className="flex items-center gap-1.5">
+                              <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="text-xs font-semibold">{opp.painSeverity}/10</span>
                             </div>
-                            <Progress value={opp.painSeverity * 10} className="h-1.5" />
                           </div>
+                          <span className="text-[10px] text-muted-foreground">{opp.dateDetected}</span>
                         </div>
                       </div>
                     </Card>
@@ -639,11 +701,18 @@ function DashboardLayout() {
                 ))}
               </div>
 
+              {/* Desktop: Horizontal carousel */}
               <div className="hidden lg:block relative">
-                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory" ref={carouselRef}>
+                <div 
+                  className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory" 
+                  ref={carouselRef}
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
                   {otherOpportunities.map((opp) => (
-                    <Link key={opp.id} href={`/opportunity/${opp.id}`} className="flex-shrink-0 w-96">
-                      <Card className="group h-full bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer snap-start">
+                    <Link key={opp.id} href={`/opportunity/${opp.id}`} className="flex-shrink-0 w-96 group">
+                      <Card className="h-full bg-card border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer snap-start">
                         <div className="p-6 space-y-4">
                           {/* Badges */}
                           <div className="flex flex-wrap gap-2">
@@ -699,6 +768,34 @@ function DashboardLayout() {
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border/50 safe-area-inset-bottom">
+        <div className="flex items-center justify-around py-2">
+          <button 
+            className="flex flex-col items-center gap-1 px-4 py-2 text-primary"
+            onClick={() => setActiveCategory("All Opportunities")}
+          >
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Home</span>
+          </button>
+          <button 
+            className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground active:text-primary transition-colors"
+            onClick={() => setIsMobileSidebarOpen(true)}
+          >
+            <Compass className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Explore</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground active:text-primary transition-colors">
+            <Search className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Search</span>
+          </button>
+          <button className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground active:text-primary transition-colors">
+            <Settings className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Settings</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

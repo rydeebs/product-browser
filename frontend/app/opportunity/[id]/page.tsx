@@ -126,26 +126,32 @@ export default function OpportunityDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-foreground">
-      <header className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card/90 backdrop-blur-md border-b border-border/50">
-        <div className="flex items-center justify-between p-4">
+      {/* Mobile Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-b border-border/50 safe-area-inset-top">
+        <div className="flex items-center justify-between px-4 py-3">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            className="text-foreground"
+            onClick={() => router.push("/")}
+            className="text-foreground -ml-2 h-10 w-10 active:scale-95 transition-transform"
           >
-            {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <ArrowLeft className="w-5 h-5" />
           </Button>
 
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-primary-foreground" />
             </div>
             <h1 className="text-base font-display font-semibold text-foreground">OpportunityOS</h1>
           </div>
 
-          <Button variant="ghost" size="icon" onClick={() => router.push("/")} className="text-foreground">
-            <ArrowLeft className="w-5 h-5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="text-foreground -mr-2 h-10 w-10 active:scale-95 transition-transform"
+          >
+            {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
       </header>
@@ -154,12 +160,12 @@ export default function OpportunityDetailPage() {
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setIsMobileSidebarOpen(false)} />
       )}
 
-      <div className="relative z-10 flex pt-16 lg:pt-0">
+      <div className="relative z-10 flex pt-14 lg:pt-0">
         <aside
           className={`
-            w-60 border-r border-border/50 bg-sidebar/95 backdrop-blur-sm flex flex-col h-[calc(100vh-4rem)] lg:h-screen
+            w-60 border-r border-border/50 bg-sidebar/95 backdrop-blur-sm flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen
             lg:relative lg:translate-x-0 lg:sticky lg:top-0
-            fixed inset-y-16 lg:inset-y-0 left-0 transition-transform duration-300 z-50
+            fixed inset-y-14 lg:inset-y-0 left-0 transition-transform duration-300 z-50
             ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           `}
         >
@@ -199,8 +205,9 @@ export default function OpportunityDetailPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-4 lg:p-8 space-y-6 lg:space-y-8">
+        <main className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="max-w-7xl mx-auto px-4 py-5 lg:p-8 space-y-5 lg:space-y-8">
+            {/* Desktop back button */}
             <Button
               variant="ghost"
               onClick={() => router.push("/")}
@@ -212,15 +219,16 @@ export default function OpportunityDetailPage() {
 
             {/* Header Section */}
             <div className="space-y-3 lg:space-y-4">
-              <h1 className="font-display text-3xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
                 {opportunity.title}
               </h1>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Badges - horizontal scroll on mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
                 {opportunity.badges.map((badge, i) => (
                   <Badge
                     key={i}
-                    className={`rounded-full px-3 py-1 text-xs font-medium border ${
+                    className={`rounded-full px-3 py-1 text-xs font-medium border whitespace-nowrap flex-shrink-0 ${
                       badge.color === "blue"
                         ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
                         : badge.color === "purple"
@@ -235,92 +243,93 @@ export default function OpportunityDetailPage() {
                 ))}
               </div>
 
-              <p className="text-base lg:text-lg text-muted-foreground leading-relaxed max-w-4xl">
+              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed max-w-4xl">
                 {opportunity.summary}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+            {/* Metric Cards - horizontal scroll on mobile, 2x2 grid on larger screens */}
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-2 lg:gap-4 scrollbar-hide snap-x snap-mandatory">
               {/* Opportunity Score */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-green-500">
-                <div className="space-y-3">
+              <Card className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-green-500 flex-shrink-0 w-[260px] sm:w-[280px] lg:w-auto snap-start">
+                <div className="space-y-2 lg:space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">Opportunity Score</h3>
-                    <Target className="w-5 h-5 text-green-400" />
+                    <h3 className="text-xs lg:text-sm font-medium text-muted-foreground">Opportunity Score</h3>
+                    <Target className="w-4 h-4 lg:w-5 lg:h-5 text-green-400" />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-foreground">
+                    <span className="text-4xl lg:text-5xl font-bold text-foreground">
                       {opportunity.metrics.opportunityScore.value}
                     </span>
-                    <span className="text-xl text-muted-foreground">/10</span>
+                    <span className="text-lg lg:text-xl text-muted-foreground">/10</span>
                   </div>
-                  <p className="text-sm font-semibold text-green-400">{opportunity.metrics.opportunityScore.label}</p>
+                  <p className="text-xs lg:text-sm font-semibold text-green-400">{opportunity.metrics.opportunityScore.label}</p>
                   <Progress
                     value={opportunity.metrics.opportunityScore.value * 10}
                     gradientColor="rgb(74, 222, 128)"
-                    className="h-2"
+                    className="h-1.5 lg:h-2"
                   />
                 </div>
               </Card>
 
               {/* Problem Severity */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-red-500">
-                <div className="space-y-3">
+              <Card className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-red-500 flex-shrink-0 w-[260px] sm:w-[280px] lg:w-auto snap-start">
+                <div className="space-y-2 lg:space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">Problem Severity</h3>
-                    <Zap className="w-5 h-5 text-red-400" />
+                    <h3 className="text-xs lg:text-sm font-medium text-muted-foreground">Problem Severity</h3>
+                    <Zap className="w-4 h-4 lg:w-5 lg:h-5 text-red-400" />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-foreground">
+                    <span className="text-4xl lg:text-5xl font-bold text-foreground">
                       {opportunity.metrics.problemSeverity.value}
                     </span>
-                    <span className="text-xl text-muted-foreground">/10</span>
+                    <span className="text-lg lg:text-xl text-muted-foreground">/10</span>
                   </div>
-                  <p className="text-sm font-semibold text-red-400">{opportunity.metrics.problemSeverity.label}</p>
+                  <p className="text-xs lg:text-sm font-semibold text-red-400">{opportunity.metrics.problemSeverity.label}</p>
                   <Progress
                     value={opportunity.metrics.problemSeverity.value * 10}
                     gradientColor="rgb(239, 68, 68)"
-                    className="h-2"
+                    className="h-1.5 lg:h-2"
                   />
                 </div>
               </Card>
 
               {/* Feasibility */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-blue-500">
-                <div className="space-y-3">
+              <Card className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-blue-500 flex-shrink-0 w-[260px] sm:w-[280px] lg:w-auto snap-start">
+                <div className="space-y-2 lg:space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">Feasibility</h3>
-                    <TrendingUp className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-xs lg:text-sm font-medium text-muted-foreground">Feasibility</h3>
+                    <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-blue-400" />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-foreground">{opportunity.metrics.feasibility.value}</span>
-                    <span className="text-xl text-muted-foreground">/10</span>
+                    <span className="text-4xl lg:text-5xl font-bold text-foreground">{opportunity.metrics.feasibility.value}</span>
+                    <span className="text-lg lg:text-xl text-muted-foreground">/10</span>
                   </div>
-                  <p className="text-sm font-semibold text-blue-400">{opportunity.metrics.feasibility.label}</p>
+                  <p className="text-xs lg:text-sm font-semibold text-blue-400">{opportunity.metrics.feasibility.label}</p>
                   <Progress
                     value={opportunity.metrics.feasibility.value * 10}
                     gradientColor="rgb(59, 130, 246)"
-                    className="h-2"
+                    className="h-1.5 lg:h-2"
                   />
                 </div>
               </Card>
 
               {/* Why Now */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-orange-500">
-                <div className="space-y-3">
+              <Card className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-orange-500 flex-shrink-0 w-[260px] sm:w-[280px] lg:w-auto snap-start">
+                <div className="space-y-2 lg:space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">Why Now</h3>
-                    <Clock className="w-5 h-5 text-orange-400" />
+                    <h3 className="text-xs lg:text-sm font-medium text-muted-foreground">Why Now</h3>
+                    <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-orange-400" />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-foreground">{opportunity.metrics.whyNow.value}</span>
-                    <span className="text-xl text-muted-foreground">/10</span>
+                    <span className="text-4xl lg:text-5xl font-bold text-foreground">{opportunity.metrics.whyNow.value}</span>
+                    <span className="text-lg lg:text-xl text-muted-foreground">/10</span>
                   </div>
-                  <p className="text-sm font-semibold text-orange-400">{opportunity.metrics.whyNow.label}</p>
+                  <p className="text-xs lg:text-sm font-semibold text-orange-400">{opportunity.metrics.whyNow.label}</p>
                   <Progress
                     value={opportunity.metrics.whyNow.value * 10}
                     gradientColor="rgb(249, 115, 22)"
-                    className="h-2"
+                    className="h-1.5 lg:h-2"
                   />
                 </div>
               </Card>
@@ -328,23 +337,23 @@ export default function OpportunityDetailPage() {
 
             {/* Market Intelligence */}
             <Card className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50">
-              <h2 className="font-display text-xl lg:text-2xl font-bold mb-4 lg:mb-6">Market Intelligence</h2>
+              <h2 className="font-display text-lg lg:text-2xl font-bold mb-4 lg:mb-6">Market Intelligence</h2>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
                 <div>
-                  <p className="text-sm text-muted-foreground">Search Volume</p>
-                  <p className="text-3xl font-bold">81,000</p>
-                  <p className="text-xs text-muted-foreground">monthly searches</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">Search Volume</p>
+                  <p className="text-2xl lg:text-3xl font-bold">81,000</p>
+                  <p className="text-[10px] lg:text-xs text-muted-foreground">monthly searches</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">6-Month Growth</p>
-                  <p className="text-3xl font-bold text-green-400">+80%</p>
-                  <p className="text-xs text-muted-foreground">accelerating trend</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground">6-Month Growth</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-green-400">+80%</p>
+                  <p className="text-[10px] lg:text-xs text-muted-foreground">accelerating trend</p>
                 </div>
               </div>
 
-              <div className="h-48 lg:h-64 overflow-x-auto">
-                <div className="min-w-[500px] h-full">
+              <div className="h-40 lg:h-64 -mx-2 lg:mx-0">
+                <div className="min-w-[320px] h-full overflow-x-auto scrollbar-hide">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={opportunity.marketData}>
                       <defs>
@@ -354,8 +363,8 @@ export default function OpportunityDetailPage() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                      <XAxis dataKey="month" stroke="#666" />
-                      <YAxis stroke="#666" />
+                      <XAxis dataKey="month" stroke="#666" tick={{ fontSize: 10 }} />
+                      <YAxis stroke="#666" tick={{ fontSize: 10 }} width={40} />
                       <Area
                         type="monotone"
                         dataKey="volume"
@@ -371,27 +380,27 @@ export default function OpportunityDetailPage() {
             </Card>
 
             {/* Evidence Section */}
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4">
               <button
                 onClick={() => toggleSection("evidence")}
-                className="w-full flex items-center justify-between lg:cursor-default"
+                className="w-full flex items-center justify-between active:opacity-70 lg:cursor-default transition-opacity"
               >
-                <h2 className="font-display text-xl lg:text-2xl font-bold">Community Signals (Social Posts)</h2>
+                <h2 className="font-display text-lg lg:text-2xl font-bold">Community Signals</h2>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform lg:hidden ${expandedSections.evidence ? "rotate-180" : ""}`}
                 />
               </button>
 
-              {(expandedSections.evidence || window.innerWidth >= 1024) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {(expandedSections.evidence || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
+                <div className="space-y-3 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
                   {opportunity.evidence.map((post, i) => (
                     <Card
                       key={i}
-                      className="p-6 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors"
+                      className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50 active:border-primary/50 lg:hover:border-primary/50 transition-colors"
                     >
-                      <Badge className="mb-3 bg-primary/20 text-primary border-primary/30">{post.platform}</Badge>
-                      <p className="text-sm italic text-muted-foreground mb-4 leading-relaxed">"{post.content}"</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                      <Badge className="mb-2 lg:mb-3 bg-primary/20 text-primary border-primary/30 text-[10px] lg:text-xs">{post.platform}</Badge>
+                      <p className="text-xs lg:text-sm italic text-muted-foreground mb-3 lg:mb-4 leading-relaxed line-clamp-4 lg:line-clamp-none">"{post.content}"</p>
+                      <div className="flex items-center gap-3 lg:gap-4 text-[10px] lg:text-xs text-muted-foreground mb-2 lg:mb-3 flex-wrap">
                         {post.engagement.upvotes && <span>↑ {post.engagement.upvotes.toLocaleString()}</span>}
                         {post.engagement.comments && <span>💬 {post.engagement.comments}</span>}
                         {post.engagement.likes && <span>❤️ {post.engagement.likes.toLocaleString()}</span>}
@@ -401,7 +410,7 @@ export default function OpportunityDetailPage() {
                         href={post.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs text-primary active:underline lg:hover:underline"
                       >
                         View original →
                       </a>
@@ -412,45 +421,45 @@ export default function OpportunityDetailPage() {
             </div>
 
             {/* Recommended Product */}
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4">
               <button
                 onClick={() => toggleSection("product")}
-                className="w-full flex items-center justify-between lg:cursor-default"
+                className="w-full flex items-center justify-between active:opacity-70 lg:cursor-default transition-opacity"
               >
-                <h2 className="font-display text-xl lg:text-2xl font-bold">Recommended Product</h2>
+                <h2 className="font-display text-lg lg:text-2xl font-bold">Recommended Product</h2>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform lg:hidden ${expandedSections.product ? "rotate-180" : ""}`}
                 />
               </button>
 
-              {(expandedSections.product || window.innerWidth >= 1024) && (
+              {(expandedSections.product || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
                 <Card className="p-4 lg:p-6 bg-card/50 backdrop-blur-sm border-border/50">
-                  <div className="space-y-6">
+                  <div className="space-y-4 lg:space-y-6">
                     <div>
-                      <h3 className="font-semibold mb-3 text-primary">Key Features</h3>
-                      <ul className="space-y-2">
+                      <h3 className="font-semibold mb-2 lg:mb-3 text-primary text-sm lg:text-base">Key Features</h3>
+                      <ul className="space-y-1.5 lg:space-y-2">
                         {opportunity.product.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <span className="text-primary mt-1">•</span>
-                            <span className="text-sm text-muted-foreground">{feature}</span>
+                          <li key={i} className="flex items-start gap-2 lg:gap-3">
+                            <span className="text-primary mt-0.5 lg:mt-1">•</span>
+                            <span className="text-xs lg:text-sm text-muted-foreground">{feature}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     <div>
-                      <h3 className="font-semibold mb-2">Manufacturing Approach</h3>
-                      <p className="text-sm text-muted-foreground">{opportunity.product.manufacturing}</p>
+                      <h3 className="font-semibold mb-1.5 lg:mb-2 text-sm lg:text-base">Manufacturing Approach</h3>
+                      <p className="text-xs lg:text-sm text-muted-foreground">{opportunity.product.manufacturing}</p>
                     </div>
 
                     <div>
-                      <h3 className="font-semibold mb-2">Target Price Point</h3>
-                      <p className="text-sm text-muted-foreground">{opportunity.product.pricePoint}</p>
+                      <h3 className="font-semibold mb-1.5 lg:mb-2 text-sm lg:text-base">Target Price Point</h3>
+                      <p className="text-xs lg:text-sm text-muted-foreground">{opportunity.product.pricePoint}</p>
                     </div>
 
                     <div>
-                      <h3 className="font-semibold mb-2">Differentiation</h3>
-                      <p className="text-sm text-muted-foreground">{opportunity.product.differentiation}</p>
+                      <h3 className="font-semibold mb-1.5 lg:mb-2 text-sm lg:text-base">Differentiation</h3>
+                      <p className="text-xs lg:text-sm text-muted-foreground">{opportunity.product.differentiation}</p>
                     </div>
                   </div>
                 </Card>
@@ -458,26 +467,26 @@ export default function OpportunityDetailPage() {
             </div>
 
             {/* Why Now Section */}
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4">
               <button
                 onClick={() => toggleSection("whyNow")}
-                className="w-full flex items-center justify-between lg:cursor-default"
+                className="w-full flex items-center justify-between active:opacity-70 lg:cursor-default transition-opacity"
               >
-                <h2 className="font-display text-xl lg:text-2xl font-bold">Why Now?</h2>
+                <h2 className="font-display text-lg lg:text-2xl font-bold">Why Now?</h2>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform lg:hidden ${expandedSections.whyNow ? "rotate-180" : ""}`}
                 />
               </button>
 
-              {(expandedSections.whyNow || window.innerWidth >= 1024) && (
-                <div className="space-y-4">
+              {(expandedSections.whyNow || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
+                <div className="space-y-2 lg:space-y-4">
                   {opportunity.whyNow.trends.map((trend, i) => (
                     <div
                       key={i}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10"
+                      className="flex items-start gap-2 lg:gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10"
                     >
-                      <Clock className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-muted-foreground leading-relaxed">{trend}</p>
+                      <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-xs lg:text-sm text-muted-foreground leading-relaxed">{trend}</p>
                     </div>
                   ))}
                 </div>
@@ -485,74 +494,74 @@ export default function OpportunityDetailPage() {
             </div>
 
             {/* Community Signals Breakdown */}
-            <div className="space-y-4">
+            <div className="space-y-3 lg:space-y-4 pb-6">
               <button
                 onClick={() => toggleSection("signals")}
-                className="w-full flex items-center justify-between lg:cursor-default"
+                className="w-full flex items-center justify-between active:opacity-70 lg:cursor-default transition-opacity"
               >
-                <h2 className="font-display text-xl lg:text-2xl font-bold">Community Signals Breakdown</h2>
+                <h2 className="font-display text-lg lg:text-2xl font-bold">Community Signals</h2>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform lg:hidden ${expandedSections.signals ? "rotate-180" : ""}`}
                 />
               </button>
 
-              {(expandedSections.signals || window.innerWidth >= 1024) && (
-                <div className="space-y-6">
+              {(expandedSections.signals || typeof window !== 'undefined' && window.innerWidth >= 1024) && (
+                <div className="space-y-4 lg:space-y-6">
                   {/* Reddit */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 lg:mb-3">
                       <div>
-                        <h3 className="font-semibold">Reddit</h3>
-                        <p className="text-xs text-muted-foreground">
+                        <h3 className="font-semibold text-sm lg:text-base">Reddit</h3>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground">
                           {opportunity.communitySignals.reddit.subreddits} subreddits •{" "}
                           {opportunity.communitySignals.reddit.members.toLocaleString()}+ members
                         </p>
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold">{opportunity.communitySignals.reddit.score}</span>
-                        <span className="text-sm text-muted-foreground">/10</span>
+                        <span className="text-xl lg:text-2xl font-bold">{opportunity.communitySignals.reddit.score}</span>
+                        <span className="text-xs lg:text-sm text-muted-foreground">/10</span>
                       </div>
                     </div>
-                    <Progress value={opportunity.communitySignals.reddit.score * 10} className="h-2 mb-2" />
-                    <p className="text-sm text-muted-foreground">{opportunity.communitySignals.reddit.description}</p>
+                    <Progress value={opportunity.communitySignals.reddit.score * 10} className="h-1.5 lg:h-2 mb-1.5 lg:mb-2" />
+                    <p className="text-xs lg:text-sm text-muted-foreground">{opportunity.communitySignals.reddit.description}</p>
                   </div>
 
                   {/* Twitter */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 lg:mb-3">
                       <div>
-                        <h3 className="font-semibold">Twitter/X</h3>
-                        <p className="text-xs text-muted-foreground">
+                        <h3 className="font-semibold text-sm lg:text-base">Twitter/X</h3>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground">
                           {opportunity.communitySignals.twitter.mentions.toLocaleString()} mentions •{" "}
                           {opportunity.communitySignals.twitter.engagement.toLocaleString()} total engagement
                         </p>
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold">{opportunity.communitySignals.twitter.score}</span>
-                        <span className="text-sm text-muted-foreground">/10</span>
+                        <span className="text-xl lg:text-2xl font-bold">{opportunity.communitySignals.twitter.score}</span>
+                        <span className="text-xs lg:text-sm text-muted-foreground">/10</span>
                       </div>
                     </div>
-                    <Progress value={opportunity.communitySignals.twitter.score * 10} className="h-2 mb-2" />
-                    <p className="text-sm text-muted-foreground">{opportunity.communitySignals.twitter.description}</p>
+                    <Progress value={opportunity.communitySignals.twitter.score * 10} className="h-1.5 lg:h-2 mb-1.5 lg:mb-2" />
+                    <p className="text-xs lg:text-sm text-muted-foreground">{opportunity.communitySignals.twitter.description}</p>
                   </div>
 
                   {/* TikTok */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 lg:mb-3">
                       <div>
-                        <h3 className="font-semibold">TikTok</h3>
-                        <p className="text-xs text-muted-foreground">
+                        <h3 className="font-semibold text-sm lg:text-base">TikTok</h3>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground">
                           {opportunity.communitySignals.tiktok.videos} videos •{" "}
                           {opportunity.communitySignals.tiktok.views.toLocaleString()} views
                         </p>
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold">{opportunity.communitySignals.tiktok.score}</span>
-                        <span className="text-sm text-muted-foreground">/10</span>
+                        <span className="text-xl lg:text-2xl font-bold">{opportunity.communitySignals.tiktok.score}</span>
+                        <span className="text-xs lg:text-sm text-muted-foreground">/10</span>
                       </div>
                     </div>
-                    <Progress value={opportunity.communitySignals.tiktok.score * 10} className="h-2 mb-2" />
-                    <p className="text-sm text-muted-foreground">{opportunity.communitySignals.tiktok.description}</p>
+                    <Progress value={opportunity.communitySignals.tiktok.score * 10} className="h-1.5 lg:h-2 mb-1.5 lg:mb-2" />
+                    <p className="text-xs lg:text-sm text-muted-foreground">{opportunity.communitySignals.tiktok.description}</p>
                   </div>
                 </div>
               )}
