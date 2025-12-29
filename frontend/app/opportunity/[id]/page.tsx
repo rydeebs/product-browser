@@ -160,13 +160,14 @@ export default function OpportunityDetailPage() {
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setIsMobileSidebarOpen(false)} />
       )}
 
-      <div className="relative z-10 flex pt-14 lg:pt-0">
+      <div className="relative z-10 min-h-screen lg:flex pt-14 lg:pt-0">
+        {/* Sidebar - Fixed overlay on mobile, static on desktop */}
         <aside
           className={`
-            w-60 border-r border-border/50 bg-sidebar/95 backdrop-blur-sm flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen
-            lg:relative lg:translate-x-0 lg:sticky lg:top-0
+            w-60 border-r border-border/50 bg-sidebar/95 backdrop-blur-sm flex-col h-[calc(100vh-3.5rem)] lg:h-screen
             fixed inset-y-14 lg:inset-y-0 left-0 transition-transform duration-300 z-50
-            ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+            hidden lg:flex lg:relative lg:sticky lg:top-0
+            ${isMobileSidebarOpen ? "!flex translate-x-0" : "-translate-x-full"}
           `}
         >
           {/* Logo */}
@@ -204,8 +205,8 @@ export default function OpportunityDetailPage() {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto overscroll-contain">
+        {/* Main Content - Full width on mobile */}
+        <main className="w-full lg:flex-1 overflow-y-auto overscroll-contain">
           <div className="max-w-7xl mx-auto px-4 py-5 lg:p-8 space-y-5 lg:space-y-8">
             {/* Desktop back button */}
             <Button

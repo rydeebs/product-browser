@@ -246,7 +246,7 @@ function DashboardLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-foreground relative">
+    <div className="min-h-screen lg:flex lg:h-screen overflow-hidden bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-foreground relative">
       {/* Background video - hidden on mobile for performance */}
       <video
         ref={videoRef}
@@ -292,12 +292,13 @@ function DashboardLayout() {
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setIsMobileSidebarOpen(false)} />
       )}
 
+      {/* Sidebar - Fixed overlay on mobile, static on desktop */}
       <aside
         className={`
-          w-60 border-r border-border/50 bg-sidebar/95 backdrop-blur-sm flex flex-col relative z-50
-          lg:relative lg:translate-x-0
+          w-60 border-r border-border/50 bg-sidebar/95 backdrop-blur-sm flex-col z-50
           fixed inset-y-0 left-0 transition-transform duration-300
-          ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          hidden lg:flex lg:relative lg:translate-x-0
+          ${isMobileSidebarOpen ? "!flex translate-x-0" : "-translate-x-full"}
         `}
       >
         {/* Top Half - Logo and Navigation */}
@@ -377,8 +378,8 @@ function DashboardLayout() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative z-10 pt-14 pb-16 lg:pt-0 lg:pb-0">
+      {/* Main Content - Full width on mobile, flex-1 on desktop */}
+      <main className="w-full lg:flex-1 flex flex-col overflow-hidden relative z-10 pt-14 pb-16 lg:pt-0 lg:pb-0">
         {/* Desktop Header */}
         <header className="border-b border-border/50 bg-card/30 backdrop-blur-sm hidden lg:block">
           <div className="p-6">
