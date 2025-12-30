@@ -19,7 +19,7 @@ export function useOpportunities() {
   })
 }
 
-export function useOpportunityDetail(id: number) {
+export function useOpportunityDetail(id: string) {
   return useQuery({
     queryKey: ['opportunity', id],
     queryFn: async () => {

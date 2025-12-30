@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import {
   Search,
@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Compass,
   Settings,
+  Loader2,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -29,16 +30,17 @@ import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { useOpportunities, useOpportunityCounts } from "@/hooks/use-opportunities"
 
-const categories = [
-  { id: "all", name: "All Opportunities", icon: Layers, count: 47 },
-  { id: "home", name: "Home & Living", icon: Home, count: 12 },
-  { id: "pets", name: "Pets & Animals", icon: Heart, count: 8 },
-  { id: "health", name: "Health & Fitness", icon: Activity, count: 6 },
-  { id: "baby", name: "Baby & Parenting", icon: Baby, count: 5 },
-  { id: "food", name: "Food & Cooking", icon: Utensils, count: 9 },
-  { id: "tech", name: "Tech & Gadgets", icon: Cpu, count: 4 },
-  { id: "outdoor", name: "Outdoor & Sports", icon: Mountain, count: 3 },
+const categoryConfig = [
+  { id: "all", name: "All Opportunities", icon: Layers, dbCategory: null },
+  { id: "home", name: "Home & Living", icon: Home, dbCategory: "Home & Living" },
+  { id: "pets", name: "Pets & Animals", icon: Heart, dbCategory: "Pets & Animals" },
+  { id: "health", name: "Health & Fitness", icon: Activity, dbCategory: "Health & Fitness" },
+  { id: "baby", name: "Baby & Parenting", icon: Baby, dbCategory: "Baby & Parenting" },
+  { id: "food", name: "Food & Cooking", icon: Utensils, dbCategory: "Food & Cooking" },
+  { id: "tech", name: "Tech & Gadgets", icon: Cpu, dbCategory: "Tech & Gadgets" },
+  { id: "outdoor", name: "Outdoor & Sports", icon: Mountain, dbCategory: "Outdoor & Sports" },
 ]
 
 const opportunities = [
@@ -150,32 +152,76 @@ function DashboardLayout() {
   const carouselRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const sidebarVideoRef = useRef<HTMLVideoElement>(null)
+  const heroVideoRef = useRef<HTMLVideoElement>(null)
+
+  // Fetch opportunities from Supabase
+  const { data: supabaseOpportunities, isLoading, error } = useOpportunities()
+  const { data: categoryCounts } = useOpportunityCounts()
+
+  // Transform Supabase data to match the UI format, fallback to hardcoded data
+  const transformedOpportunities = useMemo(() => {
+    if (!supabaseOpportunities || supabaseOpportunities.length === 0) {
+      return opportunities // fallback to hardcoded data
+    }
+    
+    return supabaseOpportunities.map((opp) => {
+      const painLevel = opp.pain_severity >= 8 ? "High" : opp.pain_severity >= 5 ? "Medium" : "Low"
+      const timing = opp.timing_score && opp.timing_score >= 8 ? "Q1 2025" : 
+                     opp.timing_score && opp.timing_score >= 5 ? "Q2 2025" : "Q3 2025"
+      
+      return {
+        id: opp.id,
+        title: opp.title,
+        category: opp.category || "Uncategorized",
+        timing,
+        painLevel,
+        summary: opp.problem_summary || "",
+        confidence: opp.confidence_score,
+        painSeverity: opp.pain_severity,
+        dateDetected: new Date(opp.detected_at).toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric", 
+          year: "numeric" 
+        }),
+        badges: [
+          opp.category?.toLowerCase().split(" ")[0] || "other",
+          opp.growth_pattern === "trending" ? "trending" : null,
+          `${painLevel.toLowerCase()}-pain`,
+        ].filter(Boolean) as string[],
+      }
+    })
+  }, [supabaseOpportunities])
+
+  // Build categories with dynamic counts
+  const categories = useMemo(() => {
+    return categoryConfig.map((cat) => ({
+      ...cat,
+      count: cat.dbCategory === null 
+        ? (categoryCounts?.total || transformedOpportunities.length)
+        : (categoryCounts?.[cat.dbCategory] || 0),
+    }))
+  }, [categoryCounts, transformedOpportunities.length])
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.playbackRate = 0.5
     }
+    if (heroVideoRef.current) {
+      heroVideoRef.current.playbackRate = 0.5
+    }
     if (sidebarVideoRef.current) {
-      console.log("[v0] Sidebar video ref exists:", !!sidebarVideoRef.current)
-      console.log("[v0] Sidebar video src:", sidebarVideoRef.current?.src)
-      console.log("[v0] Sidebar video readyState:", sidebarVideoRef.current?.readyState)
-      console.log("[v0] Sidebar video networkState:", sidebarVideoRef.current?.networkState)
-      console.log("[v0] Sidebar video error:", sidebarVideoRef.current?.error)
-
       sidebarVideoRef.current.playbackRate = 0.5
       sidebarVideoRef.current.play().catch((error) => {
-        console.log("[v0] Sidebar video autoplay prevented:", error)
+        console.log("Sidebar video autoplay prevented:", error)
       })
-    } else {
-      console.log("[v0] Sidebar video ref is null!")
     }
   }, [])
 
-  const filteredOpportunities = opportunities.filter((opp) => {
+  const filteredOpportunities = transformedOpportunities.filter((opp) => {
     // Category filter
     const matchesCategory = activeCategory === "All Opportunities" || opp.category === activeCategory
 
-    // Search filter - check against searchQuery, not activeCategory
+    // Search filter
     const matchesSearch =
       searchQuery === "" ||
       opp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -201,13 +247,9 @@ function DashboardLayout() {
   const featuredOpportunity =
     filteredOpportunities.length > 0
       ? filteredOpportunities.reduce((prev, current) => (prev.confidence > current.confidence ? prev : current))
-      : opportunities[0]
+      : transformedOpportunities[0]
 
-  const otherOpportunities = filteredOpportunities.filter((opp) => opp.id !== featuredOpportunity.id)
-
-  console.log("[v0] Filtered opportunities count:", filteredOpportunities.length)
-  console.log("[v0] Other opportunities count:", otherOpportunities.length)
-  console.log("[v0] Featured opportunity:", featuredOpportunity?.title)
+  const otherOpportunities = filteredOpportunities.filter((opp) => opp.id !== featuredOpportunity?.id)
 
   const scrollCarousel = (direction: "left" | "right") => {
     if (carouselRef.current) {
@@ -279,7 +321,7 @@ function DashboardLayout() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Layers className="w-4 h-4 text-primary-foreground" />
             </div>
-            <h1 className="text-base font-display font-semibold text-foreground">OpportunityOS</h1>
+            <h1 className="text-base font-display font-semibold text-foreground">Product Browser</h1>
           </div>
 
           <Button variant="ghost" size="icon" className="text-foreground -mr-2 h-10 w-10 active:scale-95 transition-transform">
@@ -301,15 +343,15 @@ function DashboardLayout() {
           ${isMobileSidebarOpen ? "!flex translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Top Half - Logo and Navigation */}
-        <div className="flex-1 flex flex-col min-h-0">
+        {/* Top Section - Logo and Navigation */}
+        <div className="flex-[2] flex flex-col min-h-0">
           <div className="p-6 border-b border-border/50 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <Layers className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-lg font-display font-semibold text-foreground">OpportunityOS</h1>
+                <h1 className="text-lg font-display font-semibold text-foreground">Product Browser</h1>
               </div>
             </div>
           </div>
@@ -345,8 +387,8 @@ function DashboardLayout() {
           </nav>
         </div>
 
-        {/* Bottom Half - Video Container */}
-        <div className="flex-1 flex flex-col p-4 border-t border-border/50 min-h-0">
+        {/* Bottom Section - Video Container */}
+        <div className="flex-[1] flex flex-col p-4 border-t border-border/50 min-h-0 max-h-[200px]">
           <div className="flex-1 rounded-lg overflow-hidden bg-black/30 border border-border/30 flex items-center justify-center">
             <video
               ref={sidebarVideoRef}
@@ -458,9 +500,90 @@ function DashboardLayout() {
 
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="px-4 py-5 lg:p-6 space-y-5 lg:space-y-8 max-w-7xl mx-auto">
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <span className="ml-3 text-muted-foreground">Loading opportunities...</span>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="text-center py-20">
+                <p className="text-red-400 mb-2">Failed to load opportunities</p>
+                <p className="text-sm text-muted-foreground">Using sample data instead</p>
+              </div>
+            )}
+
             {/* Featured Product of the Day Section */}
             <div className="space-y-4 lg:space-y-6">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-center text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent">
+              {/* Hero Video Section */}
+              <div className="relative w-full h-[280px] sm:h-[380px] lg:h-[480px] rounded-2xl overflow-hidden">
+                {/* Background Video */}
+                <video
+                  ref={heroVideoRef}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute w-[125%] h-[125%] object-contain opacity-90 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                >
+                  <source src="/hero-video.mp4" type="video/mp4" />
+                </video>
+                
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
+                
+                {/* Hero Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 lg:p-12 text-center">
+                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-display font-bold text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent drop-shadow-2xl">
+                    Discover What to Build Next
+                  </h1>
+                  <p className="mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg text-white/70 max-w-2xl leading-relaxed">
+                    Real complaints. Real gaps. Real opportunities.
+                  </p>
+                </div>
+              </div>
+
+              {/* Logo Carousel Section */}
+              <div className="flex items-center gap-6 lg:gap-10 py-4 lg:py-6">
+                {/* Left Text */}
+                <div className="flex-shrink-0">
+                  <p className="text-xs lg:text-sm text-muted-foreground font-medium leading-tight">
+                    Ideas
+                    <br />
+                    Scraped From
+                  </p>
+                </div>
+                
+                {/* Logo Carousel */}
+                <div className="flex-1 overflow-hidden relative">
+                  <div className="animate-logo-scroll flex gap-8 lg:gap-12">
+                    {/* First set of logos */}
+                    <img src="/logo-reddit.png" alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-twitter.png" alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-amazon.png" alt="Amazon" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-tiktok.png" alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-instagram.png" alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-youtube.png" alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-pinterest.png" alt="Pinterest" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-etsy.png" alt="Etsy" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    {/* Duplicate set for seamless loop */}
+                    <img src="/logo-reddit.png" alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-twitter.png" alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-amazon.png" alt="Amazon" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-tiktok.png" alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-instagram.png" alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-youtube.png" alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-pinterest.png" alt="Pinterest" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src="/logo-etsy.png" alt="Etsy" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Product of the Day Title */}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-center text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent mt-6 lg:mt-10">
                 Product of the Day
               </h1>
 

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, TrendingUp, Zap, Clock, Target, Menu, X, ChevronDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { TrendsChart, demoTrendData, useTrendData } from "@/components/ui/trends-chart"
 import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart } from "recharts"
 
 export default function OpportunityDetailPage() {
@@ -22,6 +23,15 @@ export default function OpportunityDetailPage() {
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
+
+  // Keyword trend data
+  const [trendTimeframe, setTrendTimeframe] = useState("today 3-y")
+  const { data: trendData, isLoading: trendLoading, error: trendError, fetchTrends } = useTrendData("pet water fountain", trendTimeframe)
+  
+  // Fetch trends on mount and timeframe change
+  useEffect(() => {
+    fetchTrends()
+  }, [trendTimeframe])
 
   // Mock data - in real app, fetch based on [id]
   const opportunity = {
@@ -379,6 +389,14 @@ export default function OpportunityDetailPage() {
                 </div>
               </div>
             </Card>
+
+            {/* Keyword Trends Chart */}
+            <TrendsChart
+              data={trendData || demoTrendData}
+              isLoading={trendLoading}
+              error={trendError}
+              onTimeframeChange={setTrendTimeframe}
+            />
 
             {/* Evidence Section */}
             <div className="space-y-3 lg:space-y-4">

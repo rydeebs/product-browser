@@ -11,39 +11,49 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Type definitions matching your database
 export interface Opportunity {
-  id: number
+  id: string // UUID
   title: string
+  description?: string
   problem_summary: string
+  keywords?: string[]
   category: string
   confidence_score: number
+  trend_score?: number
   pain_severity: number
   growth_pattern: string | null
   timing_score: number | null
-  recommended_product: string | null
-  detected_at: string
+  evidence_count?: number
   status: string
+  detected_at: string
+  created_at: string
+  updated_at: string
 }
 
 export interface Evidence {
-  id: number
-  opportunity_id: number
-  raw_post_id: number
+  id: string // UUID
+  opportunity_id: string
+  post_id?: string
+  raw_post_id: string
+  content?: string
   signal_type: string
   weight: number
+  created_at: string
   raw_posts?: RawPost
 }
 
 export interface RawPost {
-  id: number
+  id: string // UUID
   platform: string
   post_id: string
   content: string
-  author: string
+  author: string | null
   url: string
   metrics: {
-    upvotes: number
-    comments: number
+    upvotes?: number
+    comments?: number
   }
+  content_hash: string
   scraped_at: string
   processed: boolean
+  created_at: string
 }

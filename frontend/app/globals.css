@@ -117,6 +117,34 @@
 }
 
 @layer utilities {
+  /* Marquee animation */
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+  }
+
+  /* Logo scroll animation */
+  @keyframes logo-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  .animate-logo-scroll {
+    animation: logo-scroll 30s linear infinite;
+  }
+
   /* Safe area insets for notched devices */
   .safe-area-inset-top {
     padding-top: env(safe-area-inset-top);
