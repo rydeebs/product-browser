@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono, Newsreader, Marcellus } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { QueryProvider } from "@/components/providers/query-provider"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -39,11 +40,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

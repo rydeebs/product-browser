@@ -30,7 +30,9 @@ import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useOpportunities, useOpportunityCounts } from "@/hooks/use-opportunities"
+import { useTheme } from "next-themes"
 
 const categoryConfig = [
   { id: "all", name: "All Opportunities", icon: Layers, dbCategory: null },
@@ -149,10 +151,20 @@ function DashboardLayout() {
   const [painFilter, setPainFilter] = useState("all")
   const [scrollPosition, setScrollPosition] = useState(0)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const carouselRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const sidebarVideoRef = useRef<HTMLVideoElement>(null)
   const heroVideoRef = useRef<HTMLVideoElement>(null)
+  
+  // Theme
+  const { theme, resolvedTheme } = useTheme()
+  const currentTheme = resolvedTheme || theme
+  
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch opportunities from Supabase
   const { data: supabaseOpportunities, isLoading, error } = useOpportunities()
@@ -207,15 +219,18 @@ function DashboardLayout() {
       videoRef.current.playbackRate = 0.5
     }
     if (heroVideoRef.current) {
-      heroVideoRef.current.playbackRate = 0.5
+      heroVideoRef.current.playbackRate = 0.75
+      heroVideoRef.current.play().catch((error) => {
+        console.log("Hero video autoplay prevented:", error)
+      })
     }
     if (sidebarVideoRef.current) {
-      sidebarVideoRef.current.playbackRate = 0.5
+      sidebarVideoRef.current.playbackRate = 0.75
       sidebarVideoRef.current.play().catch((error) => {
         console.log("Sidebar video autoplay prevented:", error)
       })
     }
-  }, [])
+  }, [currentTheme, mounted])
 
   const filteredOpportunities = transformedOpportunities.filter((opp) => {
     // Category filter
@@ -288,7 +303,7 @@ function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen lg:flex lg:h-screen overflow-hidden bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-foreground relative">
+    <div className="min-h-screen lg:flex lg:h-screen overflow-hidden bg-gradient-to-br from-background to-muted text-foreground relative">
       {/* Background video - hidden on mobile for performance */}
       <video
         ref={videoRef}
@@ -324,9 +339,12 @@ function DashboardLayout() {
             <h1 className="text-base font-display font-semibold text-foreground">Product Browser</h1>
           </div>
 
-          <Button variant="ghost" size="icon" className="text-foreground -mr-2 h-10 w-10 active:scale-95 transition-transform">
-            <Search className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" className="text-foreground h-10 w-10 active:scale-95 transition-transform">
+              <Search className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -458,6 +476,7 @@ function DashboardLayout() {
                   <SelectItem value="low">Low (0-4)</SelectItem>
                 </SelectContent>
               </Select>
+              <ThemeToggle />
             </div>
           </div>
         </header>
@@ -527,20 +546,21 @@ function DashboardLayout() {
                   loop
                   muted
                   playsInline
-                  className="absolute w-[125%] h-[125%] object-contain opacity-90 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  key={mounted ? currentTheme : 'default'}
+                  className="absolute w-[115%] h-[115%] object-contain opacity-95 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                 >
-                  <source src="/hero-video.mp4" type="video/mp4" />
+                  <source src={mounted && currentTheme === 'light' ? "/light-video.mp4" : "/dark-video.mp4"} type="video/mp4" />
                 </video>
                 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
+                <div className={`absolute inset-0 ${currentTheme === 'light' ? 'bg-gradient-to-t from-white/90 via-white/50 to-white/30' : 'bg-gradient-to-t from-black/90 via-black/50 to-black/30'}`} />
                 
                 {/* Hero Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 lg:p-12 text-center">
-                  <h1 className="text-2xl sm:text-3xl lg:text-5xl font-display font-bold text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent drop-shadow-2xl">
+                  <h1 className={`text-2xl sm:text-3xl lg:text-5xl font-display font-bold text-balance bg-clip-text text-transparent drop-shadow-2xl ${currentTheme === 'light' ? 'bg-gradient-to-r from-gray-900 via-blue-600 to-[#444df6]' : 'bg-gradient-to-r from-white via-blue-200 to-[#444df6]'}`}>
                     Discover What to Build Next
                   </h1>
-                  <p className="mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg text-white/70 max-w-2xl leading-relaxed">
+                  <p className={`mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg max-w-2xl leading-relaxed ${currentTheme === 'light' ? 'text-gray-600' : 'text-white/70'}`}>
                     Real complaints. Real gaps. Real opportunities.
                   </p>
                 </div>
@@ -561,29 +581,29 @@ function DashboardLayout() {
                 <div className="flex-1 overflow-hidden relative">
                   <div className="animate-logo-scroll flex gap-8 lg:gap-12">
                     {/* First set of logos */}
-                    <img src="/logo-reddit.png" alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-twitter.png" alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-amazon.png" alt="Amazon" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-tiktok.png" alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-instagram.png" alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-youtube.png" alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-pinterest.png" alt="Pinterest" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-etsy.png" alt="Etsy" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    {/* Duplicate set for seamless loop */}
-                    <img src="/logo-reddit.png" alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-twitter.png" alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-amazon.png" alt="Amazon" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-tiktok.png" alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-instagram.png" alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-youtube.png" alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-pinterest.png" alt="Pinterest" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
-                    <img src="/logo-etsy.png" alt="Etsy" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-reddit.png" : "/logo-reddit.png"} alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-twitter.png" : "/logo-twitter.png"} alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-tiktok.png" : "/logo-tiktok.png"} alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-instagram.png" : "/logo-instagram.png"} alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-youtube.png" : "/logo-youtube.png"} alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    {/* Second set for seamless loop */}
+                    <img src={mounted && currentTheme === 'light' ? "/light-reddit.png" : "/logo-reddit.png"} alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-twitter.png" : "/logo-twitter.png"} alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-tiktok.png" : "/logo-tiktok.png"} alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-instagram.png" : "/logo-instagram.png"} alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-youtube.png" : "/logo-youtube.png"} alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    {/* Third set for seamless loop */}
+                    <img src={mounted && currentTheme === 'light' ? "/light-reddit.png" : "/logo-reddit.png"} alt="Reddit" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-twitter.png" : "/logo-twitter.png"} alt="Twitter" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-tiktok.png" : "/logo-tiktok.png"} alt="TikTok" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-instagram.png" : "/logo-instagram.png"} alt="Instagram" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
+                    <img src={mounted && currentTheme === 'light' ? "/light-youtube.png" : "/logo-youtube.png"} alt="YouTube" className="h-6 lg:h-8 w-auto opacity-60 hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
               </div>
 
               {/* Product of the Day Title */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-center text-balance bg-gradient-to-r from-white via-blue-200 to-[#444df6] bg-clip-text text-transparent mt-6 lg:mt-10">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-center text-balance bg-gradient-to-r from-foreground via-primary to-[#444df6] bg-clip-text text-transparent mt-6 lg:mt-10">
                 Product of the Day
               </h1>
 

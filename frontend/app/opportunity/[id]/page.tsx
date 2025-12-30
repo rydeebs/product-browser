@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, TrendingUp, Zap, Clock, Target, Menu, X, ChevronDown } from "lucide-react"
+import { ArrowLeft, TrendingUp, Zap, Clock, Target, Menu, X, ChevronDown, Layers } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { TrendsChart, demoTrendData, useTrendData } from "@/components/ui/trends-chart"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart } from "recharts"
+import { useTheme } from "next-themes"
 
 export default function OpportunityDetailPage() {
   const router = useRouter()
@@ -23,6 +25,14 @@ export default function OpportunityDetailPage() {
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
+
+  // Theme
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Keyword trend data
   const [trendTimeframe, setTrendTimeframe] = useState("today 3-y")
@@ -135,7 +145,7 @@ export default function OpportunityDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted text-foreground">
       {/* Mobile Header */}
       <header className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-b border-border/50 safe-area-inset-top">
         <div className="flex items-center justify-between px-4 py-3">
@@ -150,19 +160,22 @@ export default function OpportunityDetailPage() {
 
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-primary-foreground" />
+              <Layers className="w-4 h-4 text-primary-foreground" />
             </div>
-            <h1 className="text-base font-display font-semibold text-foreground">OpportunityOS</h1>
+            <h1 className="text-base font-display font-semibold text-foreground">Product Browser</h1>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            className="text-foreground -mr-2 h-10 w-10 active:scale-95 transition-transform"
-          >
-            {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              className="text-foreground h-10 w-10 active:scale-95 transition-transform"
+            >
+              {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -182,33 +195,44 @@ export default function OpportunityDetailPage() {
         >
           {/* Logo */}
           <div className="p-6 border-b border-border/50">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push("/")}>
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary-foreground" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push("/")}>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Layers className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-display font-semibold text-foreground">Product Browser</h1>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-display font-semibold text-foreground">OpportunityOS</h1>
-              </div>
+              <ThemeToggle />
             </div>
           </div>
 
           {/* Navigation would go here - reuse from dashboard */}
           <div className="flex-1 p-4 text-sm text-muted-foreground">
-            <p>Dashboard navigation...</p>
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/")}
+              className="gap-2 text-muted-foreground hover:text-foreground w-full justify-start"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Button>
           </div>
 
           {/* Video in bottom half */}
           <div className="flex-1 flex flex-col p-4 border-t border-border/50 min-h-0">
             <div className="flex-1 rounded-lg overflow-hidden bg-black/30 border border-border/30 flex items-center justify-center">
               <video
-                src="/sidebar-globe-video.mp4"
+                src={mounted && resolvedTheme === 'light' ? "/light-video.mp4" : "/dark-video.mp4"}
+                key={mounted ? resolvedTheme : 'default'}
                 autoPlay
                 loop
                 muted
                 playsInline
                 className="w-full h-full object-contain"
                 onLoadedMetadata={(e) => {
-                  e.currentTarget.playbackRate = 0.5
+                  e.currentTarget.playbackRate = 0.75
                 }}
               />
             </div>
@@ -373,9 +397,9 @@ export default function OpportunityDetailPage() {
                           <stop offset="95%" stopColor="#444df6" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-                      <XAxis dataKey="month" stroke="#666" tick={{ fontSize: 10 }} />
-                      <YAxis stroke="#666" tick={{ fontSize: 10 }} width={40} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={mounted && resolvedTheme === 'light' ? "#e5e5e5" : "#2a2a2a"} />
+                      <XAxis dataKey="month" stroke={mounted && resolvedTheme === 'light' ? "#666" : "#888"} tick={{ fontSize: 10 }} />
+                      <YAxis stroke={mounted && resolvedTheme === 'light' ? "#666" : "#888"} tick={{ fontSize: 10 }} width={40} />
                       <Area
                         type="monotone"
                         dataKey="volume"
