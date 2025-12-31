@@ -546,14 +546,13 @@ function DashboardLayout() {
                   loop
                   muted
                   playsInline
-                  key={mounted ? currentTheme : 'default'}
                   className="absolute w-[115%] h-[115%] object-contain opacity-95 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                 >
-                  <source src={mounted && currentTheme === 'light' ? "/light-video.mp4" : "/dark-video.mp4"} type="video/mp4" />
+                  <source src="/building-video.mp4" type="video/mp4" />
                 </video>
                 
                 {/* Gradient Overlay */}
-                <div className={`absolute inset-0 ${currentTheme === 'light' ? 'bg-gradient-to-t from-white/90 via-white/50 to-white/30' : 'bg-gradient-to-t from-black/90 via-black/50 to-black/30'}`} />
+                <div className={`absolute inset-0 ${currentTheme === 'light' ? 'bg-transparent' : 'bg-gradient-to-t from-black/90 via-black/50 to-black/30'}`} />
                 
                 {/* Hero Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 lg:p-12 text-center">
