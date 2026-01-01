@@ -3,9 +3,92 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase, type Opportunity } from '@/lib/supabase'
 
-export function useOpportunities() {
+// Types for pagination and filtering
+export interface OpportunityFilters {
+  page?: number
+  limit?: number
+  category?: string
+  confidenceMin?: number
+  painSeverityMin?: number
+  sortBy?: 'confidence_score' | 'pain_severity' | 'created_at' | 'detected_at'
+  sortOrder?: 'asc' | 'desc'
+  search?: string
+}
+
+export interface PaginatedOpportunities {
+  opportunities: Opportunity[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+// Enhanced hook with pagination and filtering
+export function useOpportunities(filters?: OpportunityFilters) {
+  const {
+    page = 1,
+    limit = 20,
+    category,
+    confidenceMin,
+    painSeverityMin,
+    sortBy = 'confidence_score',
+    sortOrder = 'desc',
+    search,
+  } = filters || {}
+
   return useQuery({
-    queryKey: ['opportunities'],
+    queryKey: ['opportunities', { page, limit, category, confidenceMin, painSeverityMin, sortBy, sortOrder, search }],
+    queryFn: async (): Promise<PaginatedOpportunities> => {
+      // Build query with count
+      let query = supabase
+        .from('opportunities')
+        .select('*', { count: 'exact' })
+
+      // Apply filters
+      if (category && category !== 'all') {
+        query = query.eq('category', category)
+      }
+      
+      if (confidenceMin !== undefined) {
+        query = query.gte('confidence_score', confidenceMin)
+      }
+      
+      if (painSeverityMin !== undefined) {
+        query = query.gte('pain_severity', painSeverityMin)
+      }
+      
+      if (search) {
+        query = query.or(`title.ilike.%${search}%,problem_summary.ilike.%${search}%`)
+      }
+
+      // Apply sorting
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' })
+
+      // Apply pagination
+      const from = (page - 1) * limit
+      const to = from + limit - 1
+      query = query.range(from, to)
+
+      const { data, error, count } = await query
+
+      if (error) throw error
+
+      return {
+        opportunities: data as Opportunity[],
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit),
+      }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+// Simple hook for fetching all opportunities (backwards compatible)
+export function useAllOpportunities() {
+  return useQuery({
+    queryKey: ['all-opportunities'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('opportunities')

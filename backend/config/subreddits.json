@@ -1,0 +1,35 @@
+{
+  "general": [
+    "shutupandtakemymoney",
+    "DidntKnowIWantedThat",
+    "ProductPorn",
+    "BuyItForLife"
+  ],
+  "home": [
+    "HomeImprovement",
+    "organization",
+    "CleaningTips"
+  ],
+  "fitness": [
+    "homegym",
+    "fitness"
+  ],
+  "pets": [
+    "dogs",
+    "cats"
+  ],
+  "cooking": [
+    "Cooking",
+    "MealPrepSunday"
+  ],
+  "tech": [
+    "gadgets",
+    "techsupport"
+  ],
+  "parenting": [
+    "Parenting",
+    "NewParents",
+    "beyondthebump"
+  ]
+}
+
