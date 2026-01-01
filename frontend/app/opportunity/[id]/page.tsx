@@ -224,7 +224,8 @@ export default function OpportunityDetailPage() {
           <div className="flex-1 flex flex-col p-4 border-t border-border/50 min-h-0">
             <div className="flex-1 rounded-lg overflow-hidden bg-black/30 border border-border/30 flex items-center justify-center">
               <video
-                src="/building-video.mp4"
+                key={mounted ? resolvedTheme : 'dark'}
+                src={mounted && resolvedTheme === 'light' ? "/light-video.mp4" : "/dark-video.mp4"}
                 autoPlay
                 loop
                 muted

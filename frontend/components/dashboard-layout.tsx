@@ -155,7 +155,6 @@ function DashboardLayout() {
   const carouselRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const sidebarVideoRef = useRef<HTMLVideoElement>(null)
-  const heroVideoRef = useRef<HTMLVideoElement>(null)
   
   // Theme
   const { theme, resolvedTheme } = useTheme()
@@ -217,12 +216,6 @@ function DashboardLayout() {
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.playbackRate = 0.5
-    }
-    if (heroVideoRef.current) {
-      heroVideoRef.current.playbackRate = 0.75
-      heroVideoRef.current.play().catch((error) => {
-        console.log("Hero video autoplay prevented:", error)
-      })
     }
     if (sidebarVideoRef.current) {
       sidebarVideoRef.current.playbackRate = 0.75
@@ -537,19 +530,16 @@ function DashboardLayout() {
 
             {/* Featured Product of the Day Section */}
             <div className="space-y-4 lg:space-y-6">
-              {/* Hero Video Section */}
+              {/* Hero Image Section */}
               <div className="relative w-full h-[280px] sm:h-[380px] lg:h-[480px] rounded-2xl overflow-hidden">
-                {/* Background Video */}
-                <video
-                  ref={heroVideoRef}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute w-[115%] h-[115%] object-contain opacity-95 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                >
-                  <source src="/building-video.mp4" type="video/mp4" />
-                </video>
+                {/* Background Image */}
+                <img
+                  key={mounted ? currentTheme : 'dark'}
+                  src={mounted && currentTheme === 'light' ? "/light-image.png" : "/dark-image.png"}
+                  alt="Hero background"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  suppressHydrationWarning
+                />
                 
                 {/* Gradient Overlay */}
                 <div 
@@ -565,12 +555,6 @@ function DashboardLayout() {
                   >
                     Discover What to Build Next
                   </h1>
-                  <p 
-                    className={`mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg max-w-2xl leading-relaxed ${mounted && currentTheme === 'light' ? 'text-gray-600' : 'text-white/70'}`}
-                    suppressHydrationWarning
-                  >
-                    Real complaints. Real gaps. Real opportunities.
-                  </p>
                 </div>
               </div>
 
