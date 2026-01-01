@@ -172,11 +172,11 @@ function DashboardLayout() {
 
   // Transform Supabase data to match the UI format, fallback to hardcoded data
   const transformedOpportunities = useMemo(() => {
-    if (!supabaseOpportunities || supabaseOpportunities.length === 0) {
+    if (!supabaseOpportunities || !supabaseOpportunities.opportunities || supabaseOpportunities.opportunities.length === 0) {
       return opportunities // fallback to hardcoded data
     }
     
-    return supabaseOpportunities.map((opp) => {
+    return supabaseOpportunities.opportunities.map((opp) => {
       const painLevel = opp.pain_severity >= 8 ? "High" : opp.pain_severity >= 5 ? "Medium" : "Low"
       const timing = opp.timing_score && opp.timing_score >= 8 ? "Q1 2025" : 
                      opp.timing_score && opp.timing_score >= 5 ? "Q2 2025" : "Q3 2025"
@@ -552,14 +552,23 @@ function DashboardLayout() {
                 </video>
                 
                 {/* Gradient Overlay */}
-                <div className={`absolute inset-0 ${currentTheme === 'light' ? 'bg-transparent' : 'bg-gradient-to-t from-black/90 via-black/50 to-black/30'}`} />
+                <div 
+                  className={`absolute inset-0 ${mounted && currentTheme === 'light' ? 'bg-transparent' : 'bg-gradient-to-t from-black/90 via-black/50 to-black/30'}`}
+                  suppressHydrationWarning
+                />
                 
                 {/* Hero Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 lg:p-12 text-center">
-                  <h1 className={`text-2xl sm:text-3xl lg:text-5xl font-display font-bold text-balance bg-clip-text text-transparent drop-shadow-2xl ${currentTheme === 'light' ? 'bg-gradient-to-r from-gray-900 via-blue-600 to-[#444df6]' : 'bg-gradient-to-r from-white via-blue-200 to-[#444df6]'}`}>
+                  <h1 
+                    className={`text-2xl sm:text-3xl lg:text-5xl font-display font-bold text-balance bg-clip-text text-transparent drop-shadow-2xl ${mounted && currentTheme === 'light' ? 'bg-gradient-to-r from-gray-900 via-blue-600 to-[#444df6]' : 'bg-gradient-to-r from-white via-blue-200 to-[#444df6]'}`}
+                    suppressHydrationWarning
+                  >
                     Discover What to Build Next
                   </h1>
-                  <p className={`mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg max-w-2xl leading-relaxed ${currentTheme === 'light' ? 'text-gray-600' : 'text-white/70'}`}>
+                  <p 
+                    className={`mt-3 sm:mt-4 text-sm sm:text-base lg:text-lg max-w-2xl leading-relaxed ${mounted && currentTheme === 'light' ? 'text-gray-600' : 'text-white/70'}`}
+                    suppressHydrationWarning
+                  >
                     Real complaints. Real gaps. Real opportunities.
                   </p>
                 </div>
