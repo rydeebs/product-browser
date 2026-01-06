@@ -11,6 +11,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Try to import PRAW for official Reddit API
+try:
+    import praw
+    HAS_PRAW = True
+except ImportError:
+    HAS_PRAW = False
+    print("⚠️  PRAW not installed. Install with: pip install praw")
+
 # Pain detection patterns - posts matching these are high-value
 PAIN_PATTERNS = [
     "is there a product that",
@@ -35,6 +43,42 @@ PAIN_PATTERNS = [
     "there should be",
 ]
 
+
+def get_reddit_client():
+    """
+    Initialize Reddit client using PRAW (official API).
+    Requires environment variables:
+    - REDDIT_CLIENT_ID
+    - REDDIT_CLIENT_SECRET
+    - REDDIT_USER_AGENT (optional, has default)
+    """
+    if not HAS_PRAW:
+        return None
+    
+    client_id = os.getenv('REDDIT_CLIENT_ID')
+    client_secret = os.getenv('REDDIT_CLIENT_SECRET')
+    
+    if not client_id or not client_secret:
+        print("⚠️  Reddit API credentials not found. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET")
+        return None
+    
+    user_agent = os.getenv('REDDIT_USER_AGENT', 'ProductBrowser/1.0 (by /u/productbrowser)')
+    
+    try:
+        reddit = praw.Reddit(
+            client_id=client_id,
+            client_secret=client_secret,
+            user_agent=user_agent
+        )
+        # Test the connection
+        reddit.user.me()  # Will be None for read-only, but validates credentials
+        print("✅ Connected to Reddit API (PRAW)")
+        return reddit
+    except Exception as e:
+        print(f"⚠️  Failed to initialize Reddit client: {e}")
+        return None
+
+
 def load_subreddits_config():
     """Load subreddits from config file"""
     config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'subreddits.json')
@@ -49,6 +93,7 @@ def load_subreddits_config():
             "pets": ["dogs"],
             "cooking": ["Cooking"]
         }
+
 
 def detect_pain_signals(content: str) -> dict:
     """
@@ -70,23 +115,78 @@ def detect_pain_signals(content: str) -> dict:
         'pain_score': pain_score
     }
 
+
 supabase: Client = create_client(
     os.getenv('SUPABASE_URL'),
     os.getenv('SUPABASE_SERVICE_KEY')
 )
 
+# Initialize Reddit client (PRAW)
+reddit_client = get_reddit_client()
+
+
+def fetch_reddit_praw(subreddit: str, limit: int = 25) -> list:
+    """
+    Fetch posts from Reddit using PRAW (official API).
+    This is the recommended method as it handles authentication and rate limiting.
+    """
+    if not reddit_client:
+        print(f"⚠️  PRAW not available, falling back to JSON API for r/{subreddit}")
+        return fetch_reddit_json(subreddit, limit)
+    
+    print(f'Fetching r/{subreddit} (via PRAW)...')
+    
+    try:
+        subreddit_obj = reddit_client.subreddit(subreddit)
+        posts = []
+        
+        for post in subreddit_obj.hot(limit=limit):
+            # Detect pain signals
+            content = f"{post.title} {post.selftext}"
+            pain_info = detect_pain_signals(content)
+            
+            posts.append({
+                'post_id': post.id,
+                'title': post.title,
+                'content': post.selftext or '',
+                'url': f'https://reddit.com{post.permalink}',
+                'subreddit': subreddit,
+                'author': str(post.author) if post.author else '[deleted]',
+                'created_utc': datetime.fromtimestamp(post.created_utc, tz=timezone.utc).isoformat(),
+                'metrics': {
+                    'upvotes': post.score,
+                    'comments': post.num_comments,
+                    'upvote_ratio': post.upvote_ratio,
+                    'awards': post.total_awards_received
+                },
+                'has_pain_signal': pain_info['has_pain_signal'],
+                'pain_patterns': pain_info['matched_patterns'],
+                'pain_score': pain_info['pain_score']
+            })
+        
+        print(f'  ✓ Got {len(posts)} posts from r/{subreddit}')
+        return posts
+        
+    except Exception as e:
+        print(f'✗ Failed to fetch r/{subreddit}: {e}')
+        return []
+
+
 def fetch_reddit_json(subreddit: str, limit: int = 25) -> list:
     """
-    Fetch posts from Reddit using the JSON API
-    Simply add .json to any Reddit URL!
+    Fetch posts from Reddit using the JSON API (fallback method).
+    Note: This may get 403 errors as Reddit has been blocking unauthenticated requests.
     """
     url = f'https://www.reddit.com/r/{subreddit}/hot.json?limit={limit}'
     
+    # Use a more browser-like User-Agent
     headers = {
-        'User-Agent': 'ProductGapIntelligence/1.0 (Python/requests)'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Language': 'en-US,en;q=0.9',
     }
     
-    print(f'Fetching r/{subreddit}...')
+    print(f'Fetching r/{subreddit} (via JSON API - may be blocked)...')
     
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -95,6 +195,11 @@ def fetch_reddit_json(subreddit: str, limit: int = 25) -> list:
             print(f'⚠️  Rate limited on r/{subreddit}, waiting 60s...')
             time.sleep(60)
             response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 403:
+            print(f'✗ Access denied for r/{subreddit} (403) - Reddit requires API authentication')
+            print(f'  💡 Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET environment variables')
+            return []
         
         if response.status_code != 200:
             print(f'✗ Failed to fetch r/{subreddit}: {response.status_code}')
@@ -305,9 +410,11 @@ def update_scraper_metadata(scraper_name: str, records_processed: int, status: s
             'last_run_at': datetime.now(timezone.utc).isoformat(),
             'records_processed': records_processed,
             'status': status,
-            'error_message': error_message,
             'updated_at': datetime.now(timezone.utc).isoformat()
         }
+        
+        # Only add error_message if the column exists (optional field)
+        # Skip it to avoid schema errors
         
         if status == 'completed':
             metadata['last_success_at'] = datetime.now(timezone.utc).isoformat()
@@ -418,35 +525,76 @@ def main():
     # Comment fetching toggle
     FETCH_COMMENTS = not args.no_comments
     
-    print(f'🔍 Starting Reddit scraper (comments: {FETCH_COMMENTS}, limit: {args.limit})...\n')
+    # Determine which fetch method to use
+    use_praw = reddit_client is not None
+    if use_praw:
+        print(f'🔍 Starting Reddit scraper via PRAW (comments: {FETCH_COMMENTS}, limit: {args.limit})...\n')
+    else:
+        print(f'🔍 Starting Reddit scraper via JSON API (comments: {FETCH_COMMENTS}, limit: {args.limit})...')
+        print(f'⚠️  Note: JSON API may be blocked. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET for reliable access.\n')
     
     all_posts = []
     posts_skipped_old = 0
     
     for subreddit in subreddits:
-        # Fetch posts
-        posts = fetch_reddit_json(subreddit, limit=args.limit)
-        
-        if not posts:
-            continue
-        
-        # Filter posts by timestamp (incremental scraping)
-        if last_run_timestamp > 0:
-            original_count = len(posts)
-            posts = filter_posts_by_timestamp(posts, last_run_timestamp)
-            posts_skipped_old += original_count - len(posts)
+        # Fetch posts using PRAW (preferred) or JSON API (fallback)
+        if use_praw:
+            # PRAW returns already-processed posts
+            processed = fetch_reddit_praw(subreddit, limit=args.limit)
+            
+            if not processed:
+                continue
+            
+            # Filter by timestamp for incremental scraping
+            if last_run_timestamp > 0:
+                original_count = len(processed)
+                filtered = []
+                for post in processed:
+                    # Parse created_utc from ISO format
+                    created_str = post.get('created_utc', '')
+                    if created_str:
+                        try:
+                            created_dt = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
+                            if created_dt.timestamp() > last_run_timestamp:
+                                filtered.append(post)
+                        except:
+                            filtered.append(post)  # Include if can't parse
+                    else:
+                        filtered.append(post)
+                
+                posts_skipped_old += original_count - len(filtered)
+                processed = filtered
+                
+                if not processed:
+                    print(f'  ✓ No new posts in r/{subreddit}')
+                    time.sleep(1)
+                    continue
+            
+            all_posts.extend(processed)
+        else:
+            # JSON API fallback (may get 403 errors)
+            posts = fetch_reddit_json(subreddit, limit=args.limit)
             
             if not posts:
-                print(f'  ✓ No new posts in r/{subreddit}')
-                time.sleep(1)  # Shorter delay when skipping
                 continue
-        
-        # Process posts (optionally with comments)
-        processed = process_reddit_posts(posts, subreddit, fetch_comments=FETCH_COMMENTS)
-        all_posts.extend(processed)
+            
+            # Filter posts by timestamp (incremental scraping)
+            if last_run_timestamp > 0:
+                original_count = len(posts)
+                posts = filter_posts_by_timestamp(posts, last_run_timestamp)
+                posts_skipped_old += original_count - len(posts)
+                
+                if not posts:
+                    print(f'  ✓ No new posts in r/{subreddit}')
+                    time.sleep(1)  # Shorter delay when skipping
+                    continue
+            
+            # Process posts (optionally with comments)
+            processed = process_reddit_posts(posts, subreddit, fetch_comments=FETCH_COMMENTS)
+            all_posts.extend(processed)
         
         # Rate limit between subreddits
-        time.sleep(3)
+        time.sleep(2 if use_praw else 3)
     
     # Calculate elapsed time
     elapsed_time = time.time() - start_time

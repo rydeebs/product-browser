@@ -48,3 +48,6 @@ backend/**/__pycache__/
 backend/**/*.pyc
 backend/**/venv/
 
+# MCP Reddit data (scraped content)
+data/reddit/
+!data/.gitkeep

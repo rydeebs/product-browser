@@ -1,0 +1,89 @@
+{
+  "accounts": {
+    "indie_hackers": [
+      "levelsio",
+      "tdinh_me",
+      "marc_louvion",
+      "dannypostmaa",
+      "yabordeaux"
+    ],
+    "founders": [
+      "nateliason",
+      "gregisenberg",
+      "Julian",
+      "swyx",
+      "patrick_oshag"
+    ],
+    "vcs_investors": [
+      "naval",
+      "paulg",
+      "jason",
+      "garrytan",
+      "sama"
+    ],
+    "product_ideas": [
+      "startupideas",
+      "businessideas",
+      "productideas"
+    ]
+  },
+  "hashtags": {
+    "building": [
+      "buildinpublic",
+      "indiehackers",
+      "shipfast",
+      "buildinginpublic"
+    ],
+    "ideas": [
+      "startupideas",
+      "productidea",
+      "appidea",
+      "saasidea"
+    ],
+    "entrepreneurship": [
+      "startup",
+      "entrepreneur",
+      "solopreneur",
+      "founder"
+    ],
+    "money": [
+      "shutupandtakemymoney",
+      "takemymoney"
+    ]
+  },
+  "search_queries": {
+    "product_requests": [
+      "someone should build",
+      "someone needs to make",
+      "why isn't there",
+      "why doesn't exist",
+      "i would pay for"
+    ],
+    "frustration": [
+      "so frustrated with",
+      "hate that there's no",
+      "tired of using",
+      "sick of"
+    ],
+    "validation": [
+      "shut up and take my money",
+      "instant purchase",
+      "would definitely buy",
+      "day one purchase"
+    ],
+    "ideas": [
+      "startup idea:",
+      "product idea:",
+      "billion dollar idea",
+      "free startup idea"
+    ]
+  },
+  "scrape_settings": {
+    "limit_per_account": 20,
+    "limit_per_hashtag": 30,
+    "limit_per_search": 50,
+    "rate_limit_seconds": 2,
+    "min_pain_score_to_save": 0
+  }
+}
+

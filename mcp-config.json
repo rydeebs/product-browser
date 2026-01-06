@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "reddit": {
+      "command": "uvx",
+      "args": ["mcp-reddit"],
+      "env": {
+        "MCP_REDDIT_DATA_DIR": "./data/reddit"
+      }
+    }
+  }
+}
+
